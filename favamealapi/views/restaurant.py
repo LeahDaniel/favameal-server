@@ -4,8 +4,9 @@ from django.http import HttpResponseServerError
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
-from favamealapi.models import Restaurant
-from favamealapi.models.favoriterestaurant import FavoriteRestaurant
+from rest_framework.decorators import action
+from django.contrib.auth.models import User
+from favamealapi.models import Restaurant, FavoriteRestaurant
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
@@ -13,7 +14,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Restaurant
-        fields = ('id', 'name', 'address', 'favorite',)
+        fields = ('id', 'name', 'address', 'fans', 'favorite')
+
 
 class FaveSerializer(serializers.ModelSerializer):
     """JSON serializer for favorites"""
@@ -53,8 +55,11 @@ class RestaurantView(ViewSet):
         """
         try:
             restaurant = Restaurant.objects.get(pk=pk)
+            user = User.objects.get(pk=request.auth.user.id)
 
-            # TODO: Add the correct value to the `favorite` property of the requested restaurant
+            #! favorite boolean properties added based on current user's stars
+            # Check to see if the user is in the fans list on the restaurant
+            restaurant.favorite = user in restaurant.fans.all()
 
             serializer = RestaurantSerializer(
                 restaurant, context={'request': request})
@@ -69,13 +74,34 @@ class RestaurantView(ViewSet):
             Response -- JSON serialized list of restaurants
         """
         restaurants = Restaurant.objects.all()
+        user = User.objects.get(pk=request.auth.user.id)
 
-        # TODO: Add the correct value to the `favorite` property of each restaurant
+        #! favorite boolean properties added based on current user's stars
+        # Set the `favorite` property on every event
+        for restaurant in restaurants:
+            # Check to see if the user is in the fans list on the restaurant
+            restaurant.favorite = user in restaurant.fans.all()
 
-
-        serializer = RestaurantSerializer(restaurants, many=True, context={'request': request})
+        serializer = RestaurantSerializer(
+            restaurants, many=True, context={'request': request})
 
         return Response(serializer.data)
 
-    # TODO: Write a custom action named `star` that will allow a client to
-    # send a POST and a DELETE request to /restaurant/2/star
+    #! star custom actions added
+    @action(methods=['post'], detail=True)
+    def star(self, request, pk):
+        """Post request for a user to sign up for an event"""
+
+        user = User.objects.get(pk=request.auth.user.id)
+        restaurant = Restaurant.objects.get(pk=pk)
+        restaurant.fans.add(user)
+        return Response({'message': 'User favorite added'}, status=status.HTTP_201_CREATED)
+
+    @action(methods=['delete'], detail=True)
+    def unstar(self, request, pk):
+        """Post request for a user to sign up for an event"""
+
+        user = User.objects.get(pk=request.auth.user.id)
+        restaurant = Restaurant.objects.get(pk=pk)
+        restaurant.fans.remove(user)
+        return Response({'message': 'User favorite deleted'}, status=status.HTTP_204_NO_CONTENT)

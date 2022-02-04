@@ -12,11 +12,12 @@ from favamealapi.views.restaurant import RestaurantSerializer
 
 class MealSerializer(serializers.ModelSerializer):
     """JSON serializer for meals"""
+    #? Why are we using a restaurant serializer here?
     restaurant = RestaurantSerializer(many=False)
 
     class Meta:
         model = Meal
-        fields = ('id', 'name', 'restaurant', 'user_rating', 'avg_rating')
+        fields = ('id', 'name', 'restaurant')
 
 
 class MealView(ViewSet):
@@ -56,7 +57,7 @@ class MealView(ViewSet):
 
             # TODO: Assign a value to the `is_favorite` property of requested meal
 
-
+            #? Why are we using a restaurant serializer and passing it a meal?
             serializer = RestaurantSerializer(
                 meal, context={'request': request})
             return Response(serializer.data)
