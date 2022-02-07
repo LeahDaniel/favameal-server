@@ -2,8 +2,7 @@
 from django.conf.urls import include
 from django.urls import path
 from rest_framework import routers
-from favamealapi.views import register_user, login_user
-from favamealapi.views import RestaurantView, MealView
+from favamealapi.views import register_user, login_user, RestaurantView, MealView
 
 # pylint: disable=invalid-name
 router = routers.DefaultRouter(trailing_slash=False)

@@ -16,7 +16,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
         model = Restaurant
         fields = ('id', 'name', 'address', 'fans', 'favorite')
 
-
+# not used
 class FaveSerializer(serializers.ModelSerializer):
     """JSON serializer for favorites"""
 
@@ -51,7 +51,7 @@ class RestaurantView(ViewSet):
         """Handle GET requests for single event
 
         Returns:
-            Response -- JSON serialized game instance
+            Response -- JSON serialized event instance
         """
         try:
             restaurant = Restaurant.objects.get(pk=pk)
@@ -60,6 +60,8 @@ class RestaurantView(ViewSet):
             #! favorite boolean properties added based on current user's stars
             # Check to see if the user is in the fans list on the restaurant
             restaurant.favorite = user in restaurant.fans.all()
+            
+            # Could also do: FavoriteRestaurant.objects.filter(user=user, restaurant=restaurant)
 
             serializer = RestaurantSerializer(
                 restaurant, context={'request': request})
@@ -104,4 +106,5 @@ class RestaurantView(ViewSet):
         user = User.objects.get(pk=request.auth.user.id)
         restaurant = Restaurant.objects.get(pk=pk)
         restaurant.fans.remove(user)
+        # could also do: FavoriteRestaurant.objects.create()
         return Response({'message': 'User favorite deleted'}, status=status.HTTP_204_NO_CONTENT)
